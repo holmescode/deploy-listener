@@ -178,14 +178,14 @@
 			"Rev": "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
 		},
 		{
-			"ImportPath": "github.com/gorilla/context",
-			"Comment": "v1.1-7-g08b5f42",
-			"Rev": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
-		},
-		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.3.0-6-g4c1c395",
 			"Rev": "4c1c3952b7d9d0a061a3fa7b36fd373ba0398ebc"
+		},
+		{
+			"ImportPath": "github.com/kelseyhightower/envconfig",
+			"Comment": "v1.3.0-5-gb6fde16",
+			"Rev": "b6fde1625d631a48340817849a547164f395d9eb"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/go-digest",

@@ -1,16 +1,68 @@
-package listener
+package main
 
-import "log"
+import (
+	"encoding/json"
+
+	log "github.com/Sirupsen/logrus"
+
+	"github.com/kelseyhightower/envconfig"
+	"golang.org/x/net/context"
+)
+
+type options struct {
+	Environment string
+}
+
+type dockerHubPushMessage struct {
+	CallbackURL string `json:"callback_url"`
+	PushData    struct {
+		Tag string `json:"tag"`
+	} `json:"push_data"`
+	Repository struct {
+		Name string `json:"repo_name"`
+	} `json:"repository"`
+}
 
 func main() {
-	consumer, err := NewConsumer("amqp://localhost", "holmescode.deployments", "topic", "holmescode.deploymentsQueue", "", "deploy-listener")
+	var opt options
+	err := envconfig.Process("listener", &opt)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatal(err)
 	}
 
-	select {}
+	if opt.Environment == "production" {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
 
-	if err := consumer.Shutdown(); err != nil {
-		log.Fatalf("Could not gracefully shutdown: %s", err)
+	ctx, done := context.WithCancel(context.Background())
+	subscriber, err := NewSubscriber(ctx, done, "amqp://localhost",
+		"holmescode.deployments", "topic", "holmescode.deploymentsQueue", "", "")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	subscriber.Consume()
+	for {
+		select {
+		case msg := <-subscriber.Messages:
+			push := &dockerHubPushMessage{}
+			err := json.Unmarshal(msg.Body, push)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"raw_message": string(msg.Body[:]),
+					"error":       err,
+				}).Error("Could not parse message")
+				break
+			}
+
+			log.WithFields(log.Fields{
+				"callback_url": push.CallbackURL,
+				"tag":          push.PushData.Tag,
+				"repo_name":    push.Repository.Name,
+			}).Info("Received push notification")
+		case <-ctx.Done():
+			subscriber.Close()
+			return
+		}
 	}
 }
