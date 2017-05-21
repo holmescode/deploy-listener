@@ -4,5 +4,10 @@ go:
 dist: trusty
 
 script:
-  - go build
+  - env GOOS=linux GOARCH=amd64 go build
   - docker build -t holmescode/deploy-listener:latest -t holmescode/deploy-listener:$TRAVIS_BUILD_NUMBER .
+
+after_success:
+ - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+ - docker push holmescode/deploy-listener:$TRAVIS_BUILD_NUMBER
+ - docker push holmescode/deploy-listener:latest

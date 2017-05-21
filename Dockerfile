@@ -1,8 +1,9 @@
-FROM alpine:3.5
+FROM debian:8.8
 
-WORKDIR /app
-COPY deploy-listener .
+COPY docker-entrypoint.sh /
+COPY deploy-listener /
 
 ENV LISTENER_ENVIRONMENT production
 
-ENTRYPOINT ["/app/deploy-listener"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["listen"]
