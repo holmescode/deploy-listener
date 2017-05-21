@@ -2,3 +2,10 @@ language: go
 go:
   - 1.8
 dist: trusty
+
+before_install:
+  - godep restore
+
+script:
+  - go build
+  - docker build -t holmescode/deploy-listener:latest -t holmescode/deploy-listener:$TRAVIS_BUILD_NUMBER .
