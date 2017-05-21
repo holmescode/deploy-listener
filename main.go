@@ -11,6 +11,7 @@ import (
 
 type options struct {
 	Environment string
+	AmqpURL     string `default:"amqp://localhost"`
 }
 
 type dockerHubPushMessage struct {
@@ -35,7 +36,7 @@ func main() {
 	}
 
 	ctx, done := context.WithCancel(context.Background())
-	subscriber, err := NewSubscriber(ctx, done, "amqp://localhost",
+	subscriber, err := NewSubscriber(ctx, done, opt.AmqpURL,
 		"holmescode.deployments", "topic", "holmescode.deploymentsQueue", "", "")
 	if err != nil {
 		log.Fatal(err)
