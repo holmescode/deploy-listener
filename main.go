@@ -10,7 +10,7 @@ import (
 )
 
 type options struct {
-	Environment string
+	Environment string `default:"local"`
 	AmqpURL     string `default:"amqp://localhost"`
 }
 
@@ -61,6 +61,10 @@ func main() {
 				"tag":          push.PushData.Tag,
 				"repo_name":    push.Repository.Name,
 			}).Info("Received push notification")
+			go func() {
+				NewUpdater(push.Repository.Name, push.PushData.Tag)
+			}()
+
 		case <-ctx.Done():
 			subscriber.Close()
 			return

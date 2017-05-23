@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-if [ "$1" = 'listen' ]; then
-    exec /deploy-listener "$@"
+if [ "$1" = 'deploy-listener' ]; then
+    exec /var/service/deploy-listener "$@"
 fi
 
 exec "$@"

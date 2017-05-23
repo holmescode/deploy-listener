@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+
+	log "github.com/Sirupsen/logrus"
+
 	"fmt"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -14,7 +18,7 @@ type Updater struct {
 }
 
 // NewUpdater creates a new Updater from the environment
-func NewUpdater() (*Updater, error) {
+func NewUpdater(image, tag string) (*Updater, error) {
 	u := &Updater{}
 
 	client, err := client.NewEnvClient()
@@ -22,13 +26,55 @@ func NewUpdater() (*Updater, error) {
 		return nil, err
 	}
 
-	containers, err := client.ContainerList(context.Background(), types.ContainerListOptions{})
+	log.WithFields(log.Fields{
+		"image": image,
+		"tag":   tag,
+	}).Info("Searching for matching services")
+	services, err := client.ServiceList(context.Background(), types.ServiceListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+	for _, service := range services {
+		// TODO: Make configurable
+		if tag != "latest" {
+			continue
+		}
+
+		spec := service.Spec
+		specImage := spec.TaskTemplate.ContainerSpec.Image
+		newImage := fmt.Sprintf("%s:%s", image, tag)
+		if strings.HasPrefix(specImage, newImage) {
+			log.WithFields(log.Fields{
+				"image":      specImage,
+				"service":    service.Spec.Name,
+				"service_id": service.ID,
+			}).Info("Found service, staring update")
+
+			spec.TaskTemplate.ContainerSpec.Image = newImage
+			response, err := client.ServiceUpdate(
+				context.Background(),
+				service.ID,
+				service.Version,
+				spec,
+				types.ServiceUpdateOptions{},
+			)
+
+			if err != nil {
+				log.WithFields(log.Fields{
+					"service":    service.Spec.Name,
+					"service_id": service.ID,
+				}).Error(err)
+
+				continue
+			}
+
+			log.WithFields(log.Fields{
+				"warnings":   response.Warnings,
+				"service":    service.Spec.Name,
+				"service_id": service.ID,
+			}).Info("Service update queued")
+		}
 	}
 
 	u.client = client
