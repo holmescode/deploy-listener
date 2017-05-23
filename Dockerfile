@@ -1,7 +1,9 @@
 FROM debian:8.8
 
+WORKDIR /var/service
+
 COPY docker-entrypoint.sh /bin
-COPY deploy-listener /var/service
+COPY deploy-listener .
 
 ENV LISTENER_ENVIRONMENT production
 
